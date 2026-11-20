@@ -13,6 +13,8 @@ import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.PersistableBundle;
+import android.provider.Settings;
+import android.view.autofill.AutofillManager;
 import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyPermanentlyInvalidatedException;
 import android.security.keystore.KeyProperties;
@@ -304,6 +306,26 @@ public class MainActivity extends AppCompatActivity {
                 return;
             case "sync_inbox":
                 done(id, true, "[]");
+                return;
+            // ---- autofill service status and settings shortcut
+            case "autofill_status": {
+                AutofillManager am = getSystemService(AutofillManager.class);
+                JSONObject o = new JSONObject();
+                o.put("supported", am != null && am.isAutofillSupported());
+                o.put("enabled", am != null && am.hasEnabledAutofillServices());
+                o.put("bio", prefs.contains("bio_ct"));
+                done(id, true, o.toString());
+                return;
+            }
+            case "autofill_settings":
+                runOnUiThread(() -> {
+                    try {
+                        startActivity(new Intent(Settings.ACTION_REQUEST_SET_AUTOFILL_SERVICE, Uri.parse("package:" + getPackageName())));
+                    } catch (Exception e) {
+                        try { startActivity(new Intent(Settings.ACTION_SETTINGS)); } catch (Exception ignored) { }
+                    }
+                });
+                done(id, true, "true");
                 return;
             // ---- tap-to-pair: the phone only initiates (finds the PC and sends it a request)
             case "sync_set_pairing":

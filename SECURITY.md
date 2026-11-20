@@ -19,6 +19,13 @@ Keystead is a personal project. It uses standard, well-reviewed cryptography, bu
 - **Tap-to-pair** uses an ECDH (P-256) key exchange; the key never crosses the network. Both screens show a 6-digit code that must match, which stops a device in the middle from pairing.
 - Devices only answer discovery while the *Find nearby devices* screen is open.
 
+## Autofill
+
+- **Browser extension:** talks only to the Keystead app on the same computer (127.0.0.1, never the network). It connects once with a 6-digit code shown in the app and then uses a random token, stored by the app only as a hash. Requests from web pages are refused. The site a login is filled into is read from the browser itself, not from the page, and logins are offered only for the exact registered domain, so look-alike phishing sites get nothing.
+- **Auto-type (Windows):** Ctrl+Alt+A remembers the app you were in and types into it only after you pick an account in Keystead.
+- **Android:** the autofill service never decrypts anything itself. Choosing *Fill with Keystead* opens a fingerprint prompt; the vault is decrypted in memory only to hand back the one login you pick.
+- Nothing is filled while Keystead is locked.
+
 ## Other protections
 
 - Auto-lock after inactivity; locks when the phone app goes to the background.

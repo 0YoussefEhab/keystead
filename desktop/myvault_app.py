@@ -4,6 +4,7 @@ The vault is stored encrypted at %APPDATA%\\MyVault\\myvault.vault
 import base64, ctypes, glob, os, subprocess, sys, time
 import webview
 from sync_server import SyncServer, local_ips
+from autofill_desktop import AutoType, BrowserBridge
 
 APP_DIR = os.path.join(os.environ.get("APPDATA") or os.path.expanduser("~"), "MyVault")
 VAULT = os.path.join(APP_DIR, "myvault.vault")
@@ -263,6 +264,24 @@ class Api:
     def sync_pair_send(self, ip, port, obj):
         return SYNC.pair_send(ip, int(port), obj)
 
+    # ----- autofill -----
+    def autotype_info(self):
+        return {"ok": AUTO.ok, "hotkey": "Ctrl+Alt+A"}
+
+    def autotype(self, user, password, mode="both", enter=False):
+        window.minimize()
+        return AUTO.run(user, password, mode, bool(enter))
+
+    def autotype_cancel(self):
+        AUTO.target = None
+        return True
+
+    def ext_info(self):
+        return {"running": BRIDGE.port is not None, "port": BRIDGE.port, "paired": BRIDGE.paired_count()}
+
+    def ext_unpair_all(self):
+        return BRIDGE.unpair_all()
+
 
 if __name__ == "__main__":
     SYNC.start()  # Windows may ask to allow MyVault on your network: choose Private networks
@@ -270,4 +289,15 @@ if __name__ == "__main__":
     window = webview.create_window("Keystead", url=os.path.join(BASE, "MyVault.html"), js_api=Api(),
                                    width=1220, height=780, min_size=(860, 560), background_color="#0a0c11")
     window.events.shown += lambda: hide_from_capture(True)  # hidden from streams by default, even on the lock screen
+
+    def js(expr):
+        try:
+            return window.evaluate_js(expr)
+        except Exception:
+            return None
+
+    AUTO = AutoType(js)
+    BRIDGE = BrowserBridge(APP_DIR, js)
+    BRIDGE.start()
+    window.events.loaded += lambda: AUTO.ok or AUTO.start()
     webview.start(http_server=True, private_mode=True)

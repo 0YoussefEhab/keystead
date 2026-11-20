@@ -155,6 +155,7 @@ input[type=range]{padding:0;accent-color:var(--acc);border:none;box-shadow:none}
  .modal{place-items:end center}
  .box{width:100vw;max-height:92dvh;border-radius:22px 22px 0 0;padding:20px 16px max(20px,env(safe-area-inset-bottom));animation:sheet .35s var(--ease)}
  .grid2{grid-template-columns:1fr}
+ .inrow{flex-wrap:wrap}
  .prow{grid-template-columns:22px 1fr 1fr}.prow>span{grid-column:2/-1}
  .deps{margin-left:12px}
  input,select,textarea{font-size:16px}
@@ -344,6 +345,7 @@ body.streaming #app{padding-top:40px}body.streaming #app aside,body.streaming #a
   <div class="grid2"><input id="nsLabel" placeholder="Label, e.g. Old password"><input id="nsHint" placeholder="Hint (optional, shown on lock screen)"></div>
   <div class="inrow"><button id="nsAdd">＋ Add password</button><div style="flex:1"></div><button id="recBtn">🗝️ Create recovery key</button></div>
  </div>
+ <div id="afSec" style="display:none"><div class="sec">⌨️ Autofill</div><div id="afBox" class="panel"></div></div>
  <div id="browSec" style="display:none"><div class="sec">🌐 Get passwords from your browser</div><div id="browBox" class="panel"></div></div>
  <div id="bioSec" style="display:none"><div class="sec">👆 Fingerprint unlock</div><div id="bioBox" class="panel"></div></div>
  <div class="sec">📡 Sync between devices</div>
@@ -362,6 +364,30 @@ body.streaming #app{padding-top:40px}body.streaming #app aside,body.streaming #a
  <p class="mut">If you forget your passwords, this key opens your vault. <b style="color:var(--txt)">Write it on paper</b> or save it somewhere safe that isn't this computer. It won't be shown again.</p>
  <div class="reckey" id="recKey"></div>
  <div class="foot"><button id="recCopy">⧉ Copy</button><button class="pri" id="recOk">I saved it</button></div>
+</div></div>
+
+<!-- AUTO-TYPE PICKER -->
+<div class="modal" id="atp"><div class="box">
+ <h3>⌨️ Auto-type</h3>
+ <p class="small mut" id="atpFor"></p>
+ <input id="atpQ" placeholder="Search accounts…" autocomplete="off">
+ <div class="prev" id="atpList" style="max-height:44vh"></div>
+ <div class="opts" style="display:flex;gap:14px;flex-wrap:wrap;align-items:center">
+  <label class="chk"><input type="radio" name="atpMode" value="both" checked>Username, Tab, password</label>
+  <label class="chk"><input type="radio" name="atpMode" value="pass">Password only</label>
+  <label class="chk"><input type="radio" name="atpMode" value="user">Username only</label>
+  <label class="chk"><input type="checkbox" id="atpEnter">Press Enter after</label>
+ </div>
+ <div class="foot"><button id="atpCancel">Cancel</button><span class="small mut">↑ ↓ to choose · Enter to type</span></div>
+</div></div>
+
+<!-- BROWSER EXTENSION PAIRING -->
+<div class="modal" id="extp"><div class="box">
+ <h3>🧩 Connect a browser</h3>
+ <p class="mut" id="extpFor">A browser extension wants to connect to Keystead.</p>
+ <p class="small mut">Type this code into the Keystead extension. If you didn't start this, just close this window.</p>
+ <div class="reckey" id="extpCode" style="letter-spacing:.3em"></div>
+ <div class="foot"><span></span><button id="extpClose">Close</button></div>
 </div></div>
 
 <input type="file" id="restoreFile" accept=".vault,.json" hidden>
@@ -914,7 +940,7 @@ async function lockScreen(msg){clearInterval(browPoll);if(findTimer||reqTimer||p
 $('hintBtn').onclick=()=>$('hints').classList.toggle('show');
 $('mp').oninput=()=>isNew&&paintMeter($('mpMeter'),null,$('mp').value);
 async function enter(){$('lockbox').classList.add('unlocking');await new Promise(r=>setTimeout(r,380));
- $('lock').style.display='none';$('app').classList.add('show');bump();grp='all';view='all';render();syncStart();applyCapture();
+ $('lock').style.display='none';$('app').classList.add('show');bump();grp='all';view='all';render();syncStart();applyCapture();if(atpPending!==null){atpTitle=atpPending;atpPending=null;setTimeout(openAutoType,400)}
  const n=V.entries.length;toast(n?`🔓 Unlocked · ${n} account${n>1?'s':''}`:'🎉 Vault ready! Import your passwords to get started')}
 function fail(m){$('lockErr').textContent=m;const b=$('lockbox');b.classList.remove('shake');void b.offsetWidth;b.classList.add('shake')}
 $('unlockBtn').onclick=async()=>{const pw=$('mp').value;const btn=$('unlockBtn');
@@ -1145,7 +1171,7 @@ $('grpOk').onclick=async()=>{await persist();closeModals();render()};
 $('setGroups').onclick=async()=>{await saveSettings(false);openGroups()};
 
 /* ---------- settings & unlock passwords ---------- */
-$('settingsBtn').onclick=()=>{$('sLock').value=S().lock;$('sClip').value=S().clip;$('capRow').style.display=DESKTOP&&!ANDROID?'':'none';renderBrowsers();$('sCap').checked=!showOnStream;['nsPw','nsPw2','nsLabel','nsHint'].forEach(i=>$(i).value='');renderSlots();closeModals();$('set').classList.add('show')};
+$('settingsBtn').onclick=()=>{$('sLock').value=S().lock;$('sClip').value=S().clip;$('capRow').style.display=DESKTOP&&!ANDROID?'':'none';renderBrowsers();renderAutofill();$('sCap').checked=!showOnStream;['nsPw','nsPw2','nsLabel','nsHint'].forEach(i=>$(i).value='');renderSlots();closeModals();$('set').classList.add('show')};
 function renderSlots(){$('slotList').innerHTML=SLOTS.map(s=>`<div class="slot"><span>${s.kind==='recovery'?'🗝️':'🔑'}</span><div class="sl"><b>${esc(s.label)}</b><div class="small mut">${s.hint?'Hint: '+esc(s.hint)+' · ':''}added ${new Date(s.created).toLocaleDateString()}</div></div>
  ${SLOTS.length>1?`<button class="icon ghost danger" data-rs="${s.id}" title="Remove">🗑</button>`:''}</div>`).join('');
  $('slotList').querySelectorAll('[data-rs]').forEach(b=>b.onclick=async()=>{const s=SLOTS.find(x=>x.id===b.dataset.rs);
@@ -1359,7 +1385,7 @@ window.__back=()=>{if(ddS){ddClose();return true}
  return false};
 let bgAt=0;
 window.__bg=()=>{bgAt=Date.now()};
-window.__fg=()=>{if(unlocked()&&bgAt&&Date.now()-bgAt>60000)lockScreen('🔒 Locked while you were away.');else if(unlocked()&&syncOn())syncNow(true);bgAt=0};
+window.__fg=()=>{if($('set').classList.contains('show'))renderAutofill();if(unlocked()&&bgAt&&Date.now()-bgAt>60000)lockScreen('🔒 Locked while you were away.');else if(unlocked()&&syncOn())syncNow(true);bgAt=0};
 async function openWithDek(blob,raw){const o=JSON.parse(blob);if(!o.slots)throw new Error('old vault');
  const dk=await crypto.subtle.importKey('raw',raw,'AES-GCM',false,['decrypt']);
  const data=JSON.parse(dec.decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:unb64(o.iv)},dk,unb64(o.ct))));
@@ -1378,6 +1404,59 @@ async function renderBio(){if(!ANDROID)return;$('bioSec').style.display='';let s
  if($('bioOn'))$('bioOn').onclick=async()=>{try{await api().bio_enroll(b64(dekRaw));toast('👆 Fingerprint unlock is on')}catch(e){if(!quietBio(e.message))toast('⚠️ '+e.message)}renderBio()};
  if($('bioOff'))$('bioOff').onclick=async()=>{await api().bio_disable();toast('Fingerprint unlock turned off');renderBio()}}
 const _openSettings2=$('settingsBtn').onclick;$('settingsBtn').onclick=()=>{_openSettings2();renderBio()};
+
+/* ---------- autofill: auto-type + browser extension ---------- */
+const TWO_PART=new Set(['co.uk','org.uk','ac.uk','gov.uk','com.au','net.au','co.jp','com.br','co.in','com.eg','com.sa','com.tr','co.za','com.mx','co.nz','com.ar']);
+function regDomain(h){h=(h||'').toLowerCase().replace(/^www\./,'').replace(/\.$/,'');if(!h||/^[\d.]+$/.test(h)||h==='localhost')return h;
+ const p=h.split('.');if(p.length>2&&TWO_PART.has(p.slice(-2).join('.')))return p.slice(-3).join('.');return p.slice(-2).join('.')}
+const entryDomain=e=>regDomain(host(e.url));
+const pubEntry=e=>({id:e.id,name:e.name,user:e.user,group:multiG()?G(e.group).name:'',via:e.via&&!e.pass?(E(e.via)||{}).name||'':'',cat:e.cat});
+window.extLogins=function(h){if(!unlocked())return{locked:true};const d=regDomain(h);if(!d)return{items:[]};
+ return{items:V.entries.filter(e=>entryDomain(e)===d).sort((a,b)=>(b.fav-a.fav)||a.name.localeCompare(b.name)).map(pubEntry)}};
+window.extSearch=function(q){if(!unlocked())return{locked:true};q=(q||'').toLowerCase().trim();
+ const list=V.entries.filter(e=>!q||[e.name,e.user,e.cat,e.url,G(e.group).name].join(' ').toLowerCase().includes(q));
+ return{items:list.sort((a,b)=>(b.fav-a.fav)||a.name.localeCompare(b.name)).slice(0,30).map(pubEntry)}};
+window.extGet=function(id,h,manual){if(!unlocked())return{locked:true};const e=E(id);if(!e)return{error:'not found'};
+ const d=regDomain(h);if(!manual&&entryDomain(e)!==d)return{error:'site mismatch'};
+ if(manual&&!e.url&&d){e.url='https://'+h;e.updated=Date.now();persist();render()} // remember the site for next time
+ bump();return{user:e.user||'',pass:e.pass||'',via:e.via&&!e.pass?(E(e.via)||{}).name||'':''}};
+window.extPairShow=function(code,browser){$('extpCode').textContent=code;$('extpFor').textContent=(browser||'A browser')+' wants to connect to Keystead.';
+ closeModals();$('extp').classList.add('show');toast('🧩 A browser extension is asking to connect')};
+window.extPairDone=function(browser){$('extp').classList.remove('show');toast('🧩 '+(browser||'Browser')+' connected');renderAutofill()};
+$('extpClose').onclick=()=>$('extp').classList.remove('show');
+
+let atpTitle='',atpPending=null,atpIdx=0,atpRows=[];
+window.autoTypeStart=function(title){atpTitle=title||'';if(!unlocked()){atpPending=atpTitle;toast('🔒 Unlock Keystead, then pick the account to type');return true}
+ openAutoType();return true};
+function guessFromTitle(t){t=(t||'').toLowerCase();if(!t)return[];return V.entries.filter(e=>{const n=(e.name||'').toLowerCase(),c=(e.cat||'').toLowerCase(),d=entryDomain(e).split('.')[0];
+ return (n&&t.includes(n))||(c&&c.length>2&&t.includes(c))||(d&&d.length>2&&t.includes(d))})}
+function openAutoType(){closeModals();$('atpFor').innerHTML=atpTitle?'Typing into: <b style="color:var(--txt)">'+esc(atpTitle)+'</b>':'Typing into the app you were in.';
+ $('atpQ').value='';renderAtp();$('atp').classList.add('show');setTimeout(()=>$('atpQ').focus(),60)}
+function renderAtp(){const q=$('atpQ').value.toLowerCase().trim(),guess=new Set(guessFromTitle(atpTitle).map(e=>e.id));
+ atpRows=V.entries.filter(e=>!q||[e.name,e.user,e.cat,e.url,G(e.group).name].join(' ').toLowerCase().includes(q))
+  .sort((a,b)=>(guess.has(b.id)-guess.has(a.id))||(b.fav-a.fav)||a.name.localeCompare(b.name)).slice(0,40);atpIdx=0;
+ $('atpList').innerHTML=atpRows.length?atpRows.map((e,i)=>`<div class="dep ${i===0?'hl':''}" data-i="${i}" style="${i===0?'background:#10b98122':''}">${avatar(e)}<span><b>${esc(e.name)}</b> <span class="small mut">${esc(e.user)}</span>${multiG()?` <span class="gpill" style="--c:${G(e.group).color}">${esc(G(e.group).name)}</span>`:''}</span>${guess.has(e.id)?'<span class="rel">matches this app</span>':''}</div>`).join(''):'<div class="small mut">No accounts match.</div>';
+ $('atpList').querySelectorAll('[data-i]').forEach(x=>x.onclick=()=>doAutoType(atpRows[+x.dataset.i]))}
+function atpMove(d){if(!atpRows.length)return;atpIdx=(atpIdx+d+atpRows.length)%atpRows.length;
+ $('atpList').querySelectorAll('[data-i]').forEach(x=>{const on=+x.dataset.i===atpIdx;x.style.background=on?'#10b98122':'';if(on)x.scrollIntoView({block:'nearest'})})}
+async function doAutoType(e){if(!e)return;const mode=document.querySelector('input[name=atpMode]:checked').value;
+ if(mode!=='user'&&!e.pass){toast(e.via?'🔑 This account signs in with '+((E(e.via)||{}).name||'another account')+', so it has no password to type':'This account has no password saved');return}
+ $('atp').classList.remove('show');try{const r=await api().autotype(e.user||'',e.pass||'',mode,$('atpEnter').checked);if(r&&!r.ok)toast('⚠️ '+r.error)}catch(err){toast('⚠️ Auto-type failed: '+(err.message||err))}}
+$('atpQ').oninput=renderAtp;
+$('atpQ').onkeydown=e=>{if(e.key==='ArrowDown'){e.preventDefault();atpMove(1)}else if(e.key==='ArrowUp'){e.preventDefault();atpMove(-1)}
+ else if(e.key==='Enter'){e.preventDefault();e.stopPropagation();doAutoType(atpRows[atpIdx])}else if(e.key==='Escape'){$('atp').classList.remove('show');api().autotype_cancel().catch(()=>{})}};
+$('atpCancel').onclick=()=>{$('atp').classList.remove('show');api().autotype_cancel().catch(()=>{})};
+
+async function renderAutofillAndroid(){$('afSec').style.display='';let st={supported:false};try{st=await api().autofill_status()}catch{}
+ if(!st.supported){$('afBox').innerHTML='<span class="small mut">This phone doesn’t support autofill services.</span>';return}
+ $('afBox').innerHTML=`<div class="slot" style="padding:6px 0;background:none"><span>📲</span><div class="sl"><b>Autofill in apps and browsers</b><div class="small mut">${st.enabled?'On. Tap a login box in any app or browser and choose <b>Fill with Keystead</b>, then touch the fingerprint sensor.':'Fill your logins straight into apps and browsers. Turn it on, then choose Keystead as your autofill service.'}${st.bio?'':'<br><span style="color:var(--warn)">Turn on fingerprint unlock below first: autofill uses it to open your vault.</span>'}</div></div><span class="small" style="color:${st.enabled?'var(--ok)':'var(--mut)'}">● ${st.enabled?'On':'Off'}</span></div>
+  <button id="afOpen"${st.enabled?' class="ghost"':' class="pri"'}>${st.enabled?'Change autofill service':'Turn on Keystead autofill'}</button>`;
+ $('afOpen').onclick=()=>api().autofill_settings()}
+async function renderAutofill(){if(ANDROID)return renderAutofillAndroid();if(!DESKTOP){$('afSec').style.display='none';return}$('afSec').style.display='';
+ let at={ok:false},ex={running:false,paired:0};try{at=await api().autotype_info()}catch{}try{ex=await api().ext_info()}catch{}
+ $('afBox').innerHTML=`<div class="slot" style="padding:6px 0;background:none"><span>⌨️</span><div class="sl"><b>Auto-type into apps</b><div class="small mut">${at.ok?'Click into an app’s login box (Riot, Steam, Discord…) and press <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>A</kbd>. Pick the account and Keystead types it in.':'The Ctrl+Alt+A shortcut is used by another program, so auto-type is off. Close that program and restart Keystead.'}</div></div><span class="small" style="color:${at.ok?'var(--ok)':'var(--bad)'}">● ${at.ok?'On':'Off'}</span></div>
+  <div class="slot" style="padding:6px 0;background:none"><span>🧩</span><div class="sl"><b>Browser autofill</b><div class="small mut">${ex.running?(ex.paired?`${ex.paired} browser${ex.paired>1?'s':''} connected. Logins are offered only on the exact website they belong to.`:'Install the Keystead extension in Chrome, Edge, Opera GX or Brave, then press Connect in it.'):'Couldn’t start (port busy). Restart Keystead.'}</div></div>${ex.paired?'<button class="ghost danger small" id="afUnpair">Disconnect all</button>':''}</div>`;
+ if($('afUnpair'))$('afUnpair').onclick=async()=>{if(!confirm('Disconnect every browser? They will need to connect again with a new code.'))return;await api().ext_unpair_all();renderAutofill();toast('🧩 All browsers disconnected')}}
 
 /* ---------- shortcuts ---------- */
 document.addEventListener('keydown',e=>{if(!unlocked())return;const c=e.ctrlKey||e.metaKey;

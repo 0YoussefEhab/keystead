@@ -45,6 +45,11 @@ Grab the latest **Keystead.exe** (Windows 10/11) or **Keystead.apk** (Android 8+
 - One-click import from Chrome, Edge, Opera GX, Brave and Firefox
 - Reads messy `.txt` notes and Bitwarden JSON; skips duplicates by username or email
 
+**Autofill**
+- **Browsers:** the Keystead extension for Chrome, Edge, Opera GX and Brave fills logins on the exact website they're saved for
+- **Windows apps:** press <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>A</kbd> in any login box (Riot, Steam, Discord…), pick the account, and Keystead types it in
+- **Android:** works as the phone's autofill service, unlocked with your fingerprint
+
 **Password health**
 - Health score, weak and reused password warnings, and a strong password generator
 
@@ -78,6 +83,9 @@ build.bat
 ```
 The app is created at `desktop\dist\Keystead.exe`.
 
+### Browser extension
+See [extension/README.md](extension/README.md): load the `extension` folder as an unpacked extension, then connect it to the app with the 6-digit code it shows.
+
 ### Android
 1. Install [Android Studio](https://developer.android.com/studio).
 2. **File → Open** the `android` folder and let Gradle sync.
@@ -90,6 +98,7 @@ Always build updates with the same signing key, or Android won't install them ov
 ```
 desktop/   Windows app: UI (MyVault.html), launcher, Wi-Fi sync server, build script
 android/   Android Studio project (WebView app with fingerprint unlock and sync)
+extension/ Browser extension (Chrome, Edge, Opera GX, Brave)
 docs/      Logo and screenshots
 ```
 
