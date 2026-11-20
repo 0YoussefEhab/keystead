@@ -1,0 +1,44 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.myvault.app'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId "com.myvault.app"
+        minSdk 26
+        targetSdk 35
+        versionCode 1
+        versionName "1.0"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.7.0'
+    implementation 'androidx.webkit:webkit:1.12.1'
+    implementation 'androidx.biometric:biometric:1.1.0'
+
+    // Force a single Kotlin runtime version. The biometric library pulls an old
+    // kotlin-stdlib-jdk7/jdk8 (1.6.21) which clashes with the newer kotlin-stdlib (1.8.22);
+    // at 1.8.22 the jdk7/jdk8 artifacts are empty stubs, so this removes the duplicate classes.
+    constraints {
+        implementation('org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.22') {
+            because 'kotlin-stdlib-jdk7 is merged into kotlin-stdlib since 1.8'
+        }
+        implementation('org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.22') {
+            because 'kotlin-stdlib-jdk8 is merged into kotlin-stdlib since 1.8'
+        }
+    }
+}

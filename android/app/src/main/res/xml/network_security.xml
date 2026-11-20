@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sync talks to your PC on the home network over plain HTTP; the data itself is already
+     encrypted by the app with the key from your sync code. -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true" />
+</network-security-config>

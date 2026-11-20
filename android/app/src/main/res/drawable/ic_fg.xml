@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Keystead shield, inside the 66dp safe zone of the 108dp adaptive icon -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <path android:fillColor="#FFFFFF"
+        android:pathData="M54,27 L75,35 L75,52 C75,64.5 65.5,73.5 54,79 C42.5,73.5 33,64.5 33,52 L33,35 Z" />
+    <path android:fillColor="#0E9F6E"
+        android:pathData="M54,44.5 A5.5,5.5 0 1 1 53.99,44.5 Z" />
+    <path android:fillColor="#0E9F6E"
+        android:pathData="M51.8,50 L56.2,50 L56.2,61 A2.2,2.2 0 0 1 51.8,61 Z" />
+</vector>
