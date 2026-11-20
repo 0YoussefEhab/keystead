@@ -1,0 +1,41 @@
+# ---- NEVER commit personal data ----
+*.vault
+*.vault.tmp
+*backup*.vault
+vault.dat
+passwords*.txt
+*Passwords*.csv
+*passwords*.csv
+*logins*.csv
+*.json.bak
+
+# ---- signing keys (keep these private, back them up offline) ----
+*.keystore
+*.jks
+key.properties
+*.p12
+*.pem
+
+# ---- Python / PyInstaller build output (exe goes in GitHub Releases) ----
+__pycache__/
+*.pyc
+desktop/build/
+desktop/dist/
+*.spec
+
+# ---- Android build output (apk goes in GitHub Releases) ----
+android/.gradle/
+android/.idea/
+android/local.properties
+android/build/
+android/app/build/
+android/captures/
+*.apk
+*.aab
+*.iml
+
+# ---- OS / editor ----
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
